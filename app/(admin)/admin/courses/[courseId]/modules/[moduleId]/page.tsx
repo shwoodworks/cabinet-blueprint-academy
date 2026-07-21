@@ -41,7 +41,15 @@ export default async function AdminModuleDetailPage({
         ← Course
       </Link>
 
-      <h1 className="text-xl font-semibold">{typedModule.title}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">{typedModule.title}</h1>
+        <Link
+          href={`/admin/courses/${courseId}/modules/${moduleId}/quiz`}
+          className="rounded border border-neutral-300 px-3 py-1.5 text-xs font-medium"
+        >
+          Manage quiz
+        </Link>
+      </div>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium">Materials</h2>

@@ -6,8 +6,10 @@ Certified Installer" credential — a PDF certificate plus a publicly
 verifiable credential ID.
 
 See [`PLAN.md`](./PLAN.md) for the full domain model, user flows, and
-phased build plan. This repo currently implements **Phase 1**: auth, roles,
-and course/module/material CRUD (no quiz engine yet).
+phased build plan. This repo currently implements **Phase 1** (auth, roles,
+course/module/material CRUD) and **Phase 2** (module quiz engine — question
+authoring, randomized attempts, scoring, retry limits, module gating). Final
+exam, certificates, and employer roster are still to come.
 
 ## Stack
 
@@ -30,6 +32,9 @@ Storage) + pdf-lib (certificate generation, Phase 3) + qrcode.
 - `supabase/schema.sql` — full domain model + RLS policies.
 - `lib/supabase/` — browser/server/middleware Supabase clients.
 - `lib/auth.ts` — current-user + role-guard helpers used by server components.
-- `app/(admin)/admin/courses/...` — course/module/material authoring.
-- `app/(learner)/courses/...` — course consumption, progress, mark-complete.
+- `app/(admin)/admin/courses/...` — course/module/material authoring, plus
+  `.../modules/[moduleId]/quiz` for question authoring and attempt resets.
+- `app/(learner)/courses/...` — course consumption, module quiz-taking and
+  results, progress tracking.
+- `app/actions/quiz.ts`, `lib/quiz.ts` — attempt grading, question shuffling.
 - `app/login`, `app/actions/auth.ts` — email/password auth.

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { markModuleComplete } from "@/app/actions/learner";
-import type { CourseModule, Material } from "@/lib/types/database";
+import type { Assessment, CourseModule, Material } from "@/lib/types/database";
 
 export default async function LearnerModuleDetailPage({
   params,
@@ -49,6 +49,26 @@ export default async function LearnerModuleDetailPage({
   const typedMaterials = (materials ?? []) as Material[];
   const completed = progressRow?.status === "completed";
 
+  const { data: assessment } = await supabase
+    .from("assessments")
+    .select("*")
+    .eq("module_id", moduleId)
+    .eq("scope", "module_quiz")
+    .maybeSingle();
+  const typedAssessment = assessment as Assessment | null;
+
+  let attemptsUsed = 0;
+  if (typedAssessment) {
+    const { count } = await supabase
+      .from("assessment_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("assessment_id", typedAssessment.id)
+      .eq("user_id", user.id);
+    attemptsUsed = count ?? 0;
+  }
+  const attemptsExhausted =
+    !!typedAssessment && typedAssessment.max_attempts != null && attemptsUsed >= typedAssessment.max_attempts;
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10">
       <Link href={`/courses/${courseId}`} className="text-sm text-neutral-500">
@@ -81,6 +101,19 @@ export default async function LearnerModuleDetailPage({
 
       {completed ? (
         <p className="text-sm font-medium text-green-700">Module completed.</p>
+      ) : typedAssessment ? (
+        attemptsExhausted ? (
+          <p className="text-sm text-neutral-600">
+            No attempts remaining — contact your admin to reset the quiz.
+          </p>
+        ) : (
+          <Link
+            href={`/courses/${courseId}/modules/${moduleId}/quiz`}
+            className="inline-block rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            {attemptsUsed > 0 ? "Retake quiz" : "Take quiz"}
+          </Link>
+        )
       ) : (
         <form action={markModuleComplete.bind(null, courseId, moduleId)}>
           <button
