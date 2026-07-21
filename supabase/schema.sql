@@ -1,5 +1,17 @@
 -- Cabinet Blueprint Certified Installer — full domain model (see PLAN.md §1)
--- Postgres/Supabase. Run against a fresh Supabase project.
+-- Postgres/Supabase. Safe to re-run: wipes and recreates the public schema
+-- first, so a failed partial run never blocks the next attempt.
+
+drop schema public cascade;
+create schema public;
+
+grant usage on schema public to postgres, anon, authenticated, service_role;
+grant all on all tables in schema public to postgres, service_role;
+grant all on all sequences in schema public to postgres, service_role;
+grant all on all functions in schema public to postgres, service_role;
+alter default privileges in schema public grant all on tables to postgres, service_role;
+alter default privileges in schema public grant all on sequences to postgres, service_role;
+alter default privileges in schema public grant all on functions to postgres, service_role;
 
 create extension if not exists "pgcrypto";
 
