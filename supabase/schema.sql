@@ -13,6 +13,16 @@ alter default privileges in schema public grant all on tables to postgres, servi
 alter default privileges in schema public grant all on sequences to postgres, service_role;
 alter default privileges in schema public grant all on functions to postgres, service_role;
 
+-- Row Level Security (below) filters *which* rows anon/authenticated can
+-- touch, but Postgres also requires the base table-level grant before RLS
+-- is even consulted — without this, every PostgREST request from the app
+-- (running as anon/authenticated) fails with "permission denied", RLS
+-- policies notwithstanding. This mirrors what Supabase grants by default
+-- for tables created through the dashboard; SQL-created tables need it
+-- spelled out explicitly.
+alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
+alter default privileges in schema public grant usage, select on sequences to anon, authenticated;
+
 create extension if not exists "pgcrypto";
 
 -- ---------------------------------------------------------------------------
@@ -318,3 +328,12 @@ create policy credentials_select_employer_org on credentials for select
   );
 create policy credentials_admin on credentials for all
   using (auth_user_role() = 'admin') with check (auth_user_role() = 'admin');
+
+-- ---------------------------------------------------------------------------
+-- Table-level grants for anon/authenticated (RLS above filters rows; this
+-- grants the base privilege the ALTER DEFAULT PRIVILEGES clause near the
+-- top only covers for tables created *after* this script runs).
+-- ---------------------------------------------------------------------------
+
+grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
