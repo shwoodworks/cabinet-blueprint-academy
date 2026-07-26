@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const MATERIALS_BUCKET = "materials";
 
@@ -186,4 +187,41 @@ export async function deleteMaterial(courseId: string, moduleId: string, materia
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/courses/${courseId}/modules/${moduleId}`);
+}
+
+export async function inviteStudent(formData: FormData) {
+  await requireRole("admin");
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const courseId = String(formData.get("course_id") ?? "").trim();
+
+  if (!email) throw new Error("Email is required");
+  if (!fullName) throw new Error("Name is required");
+  if (!courseId) throw new Error("Please choose a course");
+
+  const adminClient = createAdminClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cabinet-blueprint-academy.vercel.app";
+
+  const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+    email,
+    { redirectTo: `${siteUrl}/auth/callback?next=/update-password` }
+  );
+
+  if (inviteError) throw new Error(inviteError.message);
+  if (!invited?.user) throw new Error("Invite did not return a user");
+
+  const { error: profileError } = await adminClient
+    .from("users")
+    .insert({ id: invited.user.id, email, full_name: fullName, role: "learner" });
+
+  if (profileError) throw new Error(profileError.message);
+
+  const { error: enrollError } = await adminClient
+    .from("enrollments")
+    .insert({ user_id: invited.user.id, course_id: courseId });
+
+  if (enrollError) throw new Error(enrollError.message);
+
+  revalidatePath("/admin/students");
 }
