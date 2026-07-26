@@ -1,78 +1,64 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
-type LinkStatus = "checking" | "ready" | "invalid";
+type Step = "code" | "password";
+
+function readParam(name: string): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get(name) ?? "";
+}
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [linkStatus, setLinkStatus] = useState<LinkStatus>("checking");
-  const [linkError, setLinkError] = useState<string | null>(null);
+
+  const [step, setStep] = useState<Step>("code");
+  const [email, setEmail] = useState(() => readParam("email"));
+  const [otpType] = useState<EmailOtpType>(() => {
+    const t = readParam("type");
+    return t === "recovery" ? "recovery" : "invite";
+  });
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // This page only makes sense as the destination of a fresh invite or
-    // password-reset email link, which Supabase delivers as an access_token
-    // in the URL's hash fragment. It must NOT accept a password change just
-    // because *some* session happens to already be active in this browser -
-    // otherwise clicking someone else's invite link while you're logged in
-    // as yourself would silently change YOUR password instead of theirs.
-    const hash = window.location.hash;
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setCodeError(null);
 
-    if (hash.includes("error=")) {
-      const params = new URLSearchParams(hash.replace("#", ""));
-      const description = params.get("error_description");
-      setLinkError(
-        description
-          ? decodeURIComponent(description.replace(/\+/g, " "))
-          : "This link is invalid or has expired."
-      );
-      setLinkStatus("invalid");
+    if (!email.trim()) {
+      setCodeError("Enter your email address.");
+      return;
+    }
+    if (!code.trim()) {
+      setCodeError("Enter the code from your email.");
       return;
     }
 
-    if (!hash.includes("access_token=")) {
-      setLinkError("This page can only be opened from an invite or password-reset email link.");
-      setLinkStatus("invalid");
+    setCodeLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: otpType,
+    });
+    setCodeLoading(false);
+
+    if (error) {
+      setCodeError("That code is wrong or has expired. Ask for a fresh email and try again.");
       return;
     }
 
-    let settled = false;
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (settled) return;
-      if (session) {
-        settled = true;
-        setLinkStatus("ready");
-      }
-    });
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (settled) return;
-      if (data.session) {
-        settled = true;
-        setLinkStatus("ready");
-      }
-    });
-
-    const timeout = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      setLinkError("This link is invalid or has expired.");
-      setLinkStatus("invalid");
-    }, 5000);
-
-    return () => {
-      listener.subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
-  }, [supabase]);
+    setStep("password");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,23 +85,50 @@ export default function UpdatePasswordPage() {
     router.refresh();
   }
 
-  if (linkStatus === "checking") {
+  if (step === "code") {
     return (
-      <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-3 px-4 text-center">
-        <p className="text-sm text-neutral-500">Checking your link…</p>
-      </main>
-    );
-  }
+      <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-4">
+        <div>
+          <h1 className="text-xl font-semibold">Enter your code</h1>
+          <p className="text-sm text-neutral-500">
+            Check your email for a 6-digit code and enter it below along with your email address.
+          </p>
+        </div>
 
-  if (linkStatus === "invalid") {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-3 px-4 text-center">
-        <h1 className="text-xl font-semibold">Link expired</h1>
-        <p className="text-sm text-neutral-600">{linkError}</p>
-        <p className="text-sm text-neutral-600">
-          Ask whoever invited you to send a fresh invite, then open it directly from your email
-          app rather than forwarding or copying it.
-        </p>
+        <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1 text-sm">
+            Email
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded border border-neutral-300 px-3 py-2"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            6-digit code
+            <input
+              type="text"
+              inputMode="numeric"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="rounded border border-neutral-300 px-3 py-2 tracking-widest"
+            />
+          </label>
+
+          {codeError && <p className="text-sm text-red-600">{codeError}</p>}
+
+          <button
+            type="submit"
+            disabled={codeLoading}
+            className="rounded bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {codeLoading ? "Checking…" : "Continue"}
+          </button>
+        </form>
       </main>
     );
   }
