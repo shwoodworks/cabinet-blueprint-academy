@@ -205,7 +205,7 @@ export async function inviteStudent(formData: FormData) {
 
   const { data: invited, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
     email,
-    { redirectTo: `${siteUrl}/update-password` }
+    { redirectTo: `${siteUrl}/update-password?type=invite` }
   );
 
   if (inviteError) throw new Error(inviteError.message);
