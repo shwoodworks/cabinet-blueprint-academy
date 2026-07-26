@@ -59,46 +59,73 @@ export default async function LearnerCourseDetailPage({
     return acc;
   }, []);
 
+  const completedCount = rows.filter((r) => r.status === "completed").length;
+
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10">
-      <Link href="/courses" className="text-sm text-neutral-500">
-        ← My Courses
-      </Link>
+    <main className="flex flex-1 flex-col">
+      <section className="bg-navy px-6 py-14">
+        <div className="mx-auto max-w-4xl">
+          <Link href="/courses" className="text-sm text-neutral-300 hover:text-white">
+            ← My Courses
+          </Link>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+            Course
+          </p>
+          <h1 className="mt-2 font-serif text-3xl font-bold text-white sm:text-4xl">
+            {typedCourse.title}
+          </h1>
+          {typedCourse.description && (
+            <p className="mt-3 max-w-xl text-sm text-neutral-300">{typedCourse.description}</p>
+          )}
+          {typedModules.length > 0 && (
+            <p className="mt-4 text-xs text-neutral-400">
+              {completedCount}/{typedModules.length} modules complete
+            </p>
+          )}
+        </div>
+      </section>
 
-      <div>
-        <h1 className="text-xl font-semibold">{typedCourse.title}</h1>
-        {typedCourse.description && (
-          <p className="text-sm text-neutral-500">{typedCourse.description}</p>
-        )}
-      </div>
-
-      <ul className="flex flex-col gap-2">
-        {rows.map(({ mod, status, locked }) => {
-          return (
+      <section className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+        <ul className="flex flex-col gap-3">
+          {rows.map(({ mod, status, locked }) => (
             <li
               key={mod.id}
-              className="flex items-center justify-between rounded border border-neutral-200 px-4 py-3"
+              className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white px-5 py-4 shadow-sm"
             >
-              <span>
-                {mod.sequence_order}. {mod.title}
-              </span>
+              <div className="flex items-center gap-4">
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                    status === "completed"
+                      ? "bg-gold text-navy"
+                      : locked
+                      ? "bg-neutral-100 text-neutral-400"
+                      : "bg-navy text-white"
+                  }`}
+                >
+                  {status === "completed" ? "✓" : mod.sequence_order}
+                </span>
+                <span className={locked ? "text-neutral-400" : "font-medium text-navy"}>
+                  {mod.title}
+                </span>
+              </div>
+
               {locked ? (
                 <span className="text-xs text-neutral-400">Locked</span>
               ) : (
                 <Link
                   href={`/courses/${courseId}/modules/${mod.id}`}
-                  className="rounded bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white"
+                  className="rounded bg-navy px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                 >
                   {status === "completed" ? "Review" : "Start"}
                 </Link>
               )}
             </li>
-          );
-        })}
-        {typedModules.length === 0 && (
-          <p className="text-sm text-neutral-500">No modules published yet.</p>
-        )}
-      </ul>
+          ))}
+          {typedModules.length === 0 && (
+            <p className="text-sm text-neutral-500">No modules published yet.</p>
+          )}
+        </ul>
+      </section>
     </main>
   );
 }
