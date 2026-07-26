@@ -6,7 +6,7 @@ export async function NavBar() {
   const user = await getCurrentUser();
 
   return (
-    <header className="flex items-center justify-between border-b border-neutral-800 bg-[#0a1f34] px-6 py-3">
+    <header className="flex items-center justify-between border-b border-neutral-800 bg-[#536270] px-6 py-3">
       <Link href="/" className="font-semibold text-[#c88d3d]">
         Cabinet Blueprint Academy
       </Link>
