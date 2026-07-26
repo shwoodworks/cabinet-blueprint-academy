@@ -17,13 +17,14 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Supabase's invite/reset link lands here with the session info tucked
-    // into the URL's hash fragment (e.g. #access_token=...&type=invite, or
-    // #error=access_denied&error_code=otp_expired if the link is dead).
-    // The Supabase browser client reads that hash automatically on load and
-    // turns it into a real session - we just need to wait for it and show
-    // something sensible either way instead of a blank/confusing screen.
+    // This page only makes sense as the destination of a fresh invite or
+    // password-reset email link, which Supabase delivers as an access_token
+    // in the URL's hash fragment. It must NOT accept a password change just
+    // because *some* session happens to already be active in this browser -
+    // otherwise clicking someone else's invite link while you're logged in
+    // as yourself would silently change YOUR password instead of theirs.
     const hash = window.location.hash;
+
     if (hash.includes("error=")) {
       const params = new URLSearchParams(hash.replace("#", ""));
       const description = params.get("error_description");
@@ -32,6 +33,12 @@ export default function UpdatePasswordPage() {
           ? decodeURIComponent(description.replace(/\+/g, " "))
           : "This link is invalid or has expired."
       );
+      setLinkStatus("invalid");
+      return;
+    }
+
+    if (!hash.includes("access_token=")) {
+      setLinkError("This page can only be opened from an invite or password-reset email link.");
       setLinkStatus("invalid");
       return;
     }
