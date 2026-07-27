@@ -60,6 +60,29 @@ export default async function LearnerCourseDetailPage({
   }, []);
 
   const completedCount = rows.filter((r) => r.status === "completed").length;
+  const allModulesComplete = typedModules.length > 0 && completedCount === typedModules.length;
+
+  let examState: "locked" | "available" | "passed" = "locked";
+  if (allModulesComplete) {
+    const { data: examAssessment } = await supabase
+      .from("assessments")
+      .select("id")
+      .eq("course_id", courseId)
+      .eq("scope", "final_exam")
+      .maybeSingle();
+
+    if (examAssessment) {
+      const { data: passedAttempt } = await supabase
+        .from("assessment_attempts")
+        .select("id")
+        .eq("assessment_id", examAssessment.id)
+        .eq("user_id", user.id)
+        .eq("passed", true)
+        .limit(1)
+        .maybeSingle();
+      examState = passedAttempt ? "passed" : "available";
+    }
+  }
 
   return (
     <main className="flex flex-1 flex-col">
@@ -125,6 +148,42 @@ export default async function LearnerCourseDetailPage({
             <p className="text-sm text-neutral-500">No modules published yet.</p>
           )}
         </ul>
+
+        {typedModules.length > 0 && (
+          <div className="mt-6 flex items-center justify-between rounded-lg border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+            <div className="flex items-center gap-4">
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                  examState === "passed"
+                    ? "bg-gold text-navy"
+                    : examState === "available"
+                    ? "bg-navy text-white"
+                    : "bg-neutral-100 text-neutral-400"
+                }`}
+              >
+                {examState === "passed" ? "✓" : "★"}
+              </span>
+              <span className={examState === "locked" ? "text-neutral-400" : "font-medium text-navy"}>
+                Final Exam
+              </span>
+            </div>
+
+            {examState === "locked" && (
+              <span className="text-xs text-neutral-400">Complete all modules to unlock</span>
+            )}
+            {examState === "available" && (
+              <Link
+                href={`/courses/${courseId}/exam`}
+                className="rounded bg-gold px-3 py-1.5 text-xs font-medium text-navy hover:opacity-90"
+              >
+                Take Exam
+              </Link>
+            )}
+            {examState === "passed" && (
+              <span className="text-xs font-medium text-green-700">Passed — certified</span>
+            )}
+          </div>
+        )}
       </section>
     </main>
   );
