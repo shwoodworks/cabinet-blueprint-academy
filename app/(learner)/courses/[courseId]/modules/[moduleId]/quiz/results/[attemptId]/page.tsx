@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { AssessmentAttempt } from "@/lib/types/database";
+import type { AssessmentAttempt, CourseModule } from "@/lib/types/database";
 import type { QuestionSnapshotItem } from "@/lib/types/quiz";
 
 export default async function LearnerQuizResultPage({
@@ -26,6 +26,28 @@ export default async function LearnerQuizResultPage({
   const typedAttempt = attempt as AssessmentAttempt;
   const snapshot = (typedAttempt.question_snapshot ?? []) as QuestionSnapshotItem[];
 
+  let nextModule: CourseModule | null = null;
+  if (typedAttempt.passed) {
+    const { data: currentModule } = await supabase
+      .from("modules")
+      .select("sequence_order")
+      .eq("id", moduleId)
+      .single();
+
+    if (currentModule) {
+      const { data: next } = await supabase
+        .from("modules")
+        .select("*")
+        .eq("course_id", courseId)
+        .eq("is_published", true)
+        .gt("sequence_order", currentModule.sequence_order)
+        .order("sequence_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      nextModule = next as CourseModule | null;
+    }
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10">
       <Link href={`/courses/${courseId}/modules/${moduleId}`} className="text-sm text-neutral-500">
@@ -42,6 +64,23 @@ export default async function LearnerQuizResultPage({
               Retake the quiz
             </Link>{" "}
             or review the explanations below first.
+          </p>
+        )}
+        {typedAttempt.passed && nextModule && (
+          <Link
+            href={`/courses/${courseId}/modules/${nextModule.id}`}
+            className="mt-3 inline-block rounded bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            Continue to {nextModule.title}
+          </Link>
+        )}
+        {typedAttempt.passed && !nextModule && (
+          <p className="mt-3 text-sm font-medium text-green-700">
+            That was the last module —{" "}
+            <Link href={`/courses/${courseId}`} className="text-blue-600 underline">
+              back to the course overview
+            </Link>
+            .
           </p>
         )}
       </div>
