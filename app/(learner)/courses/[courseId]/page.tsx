@@ -4,6 +4,10 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Course, CourseModule, ModuleProgressStatus } from "@/lib/types/database";
 
+// This page reflects live quiz/progress state right after a submission
+// redirects back here, so it must never serve a cached render.
+export const dynamic = "force-dynamic";
+
 export default async function LearnerCourseDetailPage({
   params,
 }: {
