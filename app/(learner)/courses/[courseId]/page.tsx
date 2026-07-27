@@ -184,7 +184,12 @@ export default async function LearnerCourseDetailPage({
               </Link>
             )}
             {examState === "passed" && (
-              <span className="text-xs font-medium text-green-700">Passed — certified</span>
+              <Link
+                href={`/courses/${courseId}/certificate`}
+                className="rounded bg-gold px-3 py-1.5 text-xs font-medium text-navy hover:opacity-90"
+              >
+                View Certificate
+              </Link>
             )}
           </div>
         )}
