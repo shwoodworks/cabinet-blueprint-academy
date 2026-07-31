@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PrintButton } from "@/app/components/PrintButton";
+import { ScopedPrintButton } from "@/app/components/ScopedPrintButton";
 import { CertificateDocument } from "@/app/components/CertificateDocument";
+import { OnePagerDocument } from "@/app/components/OnePagerDocument";
 
 export default async function AdminStudentCertificatePage({
   params,
@@ -64,27 +65,43 @@ export default async function AdminStudentCertificatePage({
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
       />
-      <main className="flex flex-1 flex-col items-center gap-6 bg-neutral-100 px-4 py-10 print:block print:bg-white print:p-0">
+      <main className="flex flex-1 flex-col items-center gap-10 bg-neutral-100 px-4 py-10 print:block print:bg-white print:p-0">
         <div className="print:hidden flex w-full max-w-4xl items-center justify-between">
           <Link href="/admin/students" className="text-sm text-neutral-500">
             ← Students
           </Link>
-          <PrintButton />
+          <p className="text-sm text-neutral-500">{student.full_name}</p>
         </div>
 
-        <CertificateDocument
-          fullName={student.full_name}
-          courseTitle={course.title}
-          issuedDate={issuedDate}
-          credentialId={credential.credential_id}
-        />
+        <div id="certificate-section" className="flex flex-col items-center gap-4">
+          <CertificateDocument
+            fullName={student.full_name}
+            courseTitle={course.title}
+            issuedDate={issuedDate}
+            credentialId={credential.credential_id}
+          />
+          <ScopedPrintButton target="certificate" label="Print certificate" />
+        </div>
+
+        <div id="onepager-section" className="flex flex-col items-center gap-4">
+          <OnePagerDocument
+            courseTitle={course.title}
+            credentialId={credential.credential_id}
+            issuedDate={issuedDate}
+          />
+          <ScopedPrintButton target="onepager" label="Print one-pager" />
+        </div>
       </main>
 
       <style>{`
         @media print {
-          @page {
-            size: landscape;
-            margin: 0.25in;
+          @page certificate-page {
+            size: 11in 8.5in;
+            margin: 0;
+          }
+          @page onepager-page {
+            size: letter;
+            margin: 0.5in;
           }
           body {
             margin: 0 !important;
@@ -93,8 +110,31 @@ export default async function AdminStudentCertificatePage({
             display: block !important;
             padding: 0 !important;
           }
-          #certificate {
-            margin: 0 auto !important;
+          #certificate-section {
+            page: certificate-page;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 11in;
+            height: 8.5in;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          #certificate-section #certificate {
+            width: 10.5in;
+            margin: 0 !important;
+          }
+          #onepager-section {
+            page: onepager-page;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body[data-print-target="certificate"] #onepager-section {
+            display: none !important;
+          }
+          body[data-print-target="onepager"] #certificate-section {
+            display: none !important;
           }
         }
       `}</style>
