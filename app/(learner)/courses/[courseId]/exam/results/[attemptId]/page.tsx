@@ -56,12 +56,20 @@ export default async function LearnerFinalExamResultPage({
             {credentialId && (
               <p className="mt-1 text-sm text-neutral-700">Credential ID: {credentialId}</p>
             )}
-            <Link
-              href={`/courses/${courseId}/certificate`}
-              className="mt-3 inline-block rounded bg-navy px-4 py-2 text-sm font-medium text-white"
-            >
-              View / print certificate
-            </Link>
+            <div className="mt-3 flex flex-wrap gap-3">
+              <Link
+                href={`/courses/${courseId}/certificate`}
+                className="inline-block rounded bg-navy px-4 py-2 text-sm font-medium text-white"
+              >
+                View / print certificate
+              </Link>
+              <Link
+                href={`/courses/${courseId}/one-pager`}
+                className="inline-block rounded border border-navy px-4 py-2 text-sm font-medium text-navy"
+              >
+                Employer one-pager
+              </Link>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-neutral-600">
@@ -87,8 +95,8 @@ export default async function LearnerFinalExamResultPage({
                     o.is_correct
                       ? "text-green-700"
                       : o.selected
-                        ? "text-red-600"
-                        : "text-neutral-500"
+                      ? "text-red-600"
+                      : "text-neutral-500"
                   }
                 >
                   {o.selected ? "●" : "○"} {o.label}
