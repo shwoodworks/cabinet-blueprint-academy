@@ -55,12 +55,20 @@ export default async function CertificatePage({
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
       />
-      <main className="flex flex-1 flex-col items-center gap-6 bg-neutral-100 px-4 py-10 print:block print:bg-white print:p-0">
+      <main className="flex flex-1 flex-col items-center gap-6 bg-neutral-100 px-4 py-10 print:bg-white print:p-0">
         <div className="print:hidden flex w-full max-w-4xl items-center justify-between">
           <Link href={`/courses/${courseId}`} className="text-sm text-neutral-500">
             ← {typedCourse.title}
           </Link>
-          <PrintButton />
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/courses/${courseId}/one-pager`}
+              className="text-sm font-medium text-navy hover:underline"
+            >
+              Employer one-pager
+            </Link>
+            <PrintButton />
+          </div>
         </div>
 
         <CertificateDocument
@@ -74,18 +82,30 @@ export default async function CertificatePage({
       <style>{`
         @media print {
           @page {
-            size: landscape;
-            margin: 0.25in;
+            size: 11in 8.5in;
+            margin: 0;
           }
-          body {
+          html, body {
             margin: 0 !important;
+            padding: 0 !important;
+            height: 100%;
           }
           main {
-            display: block !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 11in !important;
+            height: 8.5in !important;
+            margin: 0 !important;
             padding: 0 !important;
+            background: white !important;
           }
           #certificate {
-            margin: 0 auto !important;
+            width: 10.5in !important;
+            max-width: 10.5in !important;
+            margin: 0 !important;
+            box-shadow: none !important;
           }
         }
       `}</style>
