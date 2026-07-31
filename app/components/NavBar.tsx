@@ -17,13 +17,17 @@ export async function NavBar() {
             <>
               <Link href="/admin/courses" className="hover:text-white">Courses</Link>
               <Link href="/admin/students" className="hover:text-white">Students</Link>
+              <Link href="/admin/resources" className="hover:text-white">Resources</Link>
             </>
           )}
           {user.role === "employer" && (
             <Link href="/employer/roster" className="hover:text-white">Roster</Link>
           )}
           {user.role === "learner" && (
-            <Link href="/courses" className="hover:text-white">My Courses</Link>
+            <>
+              <Link href="/courses" className="hover:text-white">My Courses</Link>
+              <Link href="/resources" className="hover:text-white">Resources</Link>
+            </>
           )}
           <span className="text-neutral-400">{user.full_name}</span>
           <form action={signOut}>
