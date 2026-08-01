@@ -8,9 +8,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-navy: #0a1f34;
-  --color-navy-light: #142c47;
-  --color-gold: #c88d3d;
+  --color-navy: #3a3a38;
+--color-navy-light: #4f4f4c;
+--color-gold: #5b6b7a;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-playfair);
